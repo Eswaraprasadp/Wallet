@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block app_content %}
+<h3>Update Expense: </h3>
+	<form action="" method="POST">
+		{{ form.hidden_tag() }}
+		<p>
+			{{form.title.label}} <br>
+			{{ form.title(size=40) }}<br>
+			{% for error in form.title.errors %}
+                <span style="color: red;">{{ error }}</span>
+            {% endfor %}
+			{{ form.description.label }}<br>
+			{{ form.description(cols=40, rows=4) }}<br>
+			{% for error in form.description.errors %}
+                <span style="color: red;">{{ error }}</span>
+            {% endfor %}
+			{{ form.amount.label }}<br>
+			{{ form.amount(size=10) }}<br>
+			{% for error in form.amount.errors %}
+                <span style="color: red;">{{ error }}</span>
+            {% endfor %}
+		</p>
+		<p>{{ form.submit() }} </p>
+		
+	</form>
+
+{% endblock %}

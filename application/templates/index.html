@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block app_content %}
+	<h1>Welcome {{current_user.username}}!</h1>
+	<h3>Balance: Rs. {{current_user.balance}}</h3>
+	<h3>Add Expense: </h3>
+	<form action="" method="POST">
+		{{ form.hidden_tag() }}
+		<p>
+			{{form.title.label}} <br>
+			{{ form.title(size=40) }}<br>
+			{% for error in form.title.errors %}
+                <span style="color: red;">{{ error }}</span>
+            {% endfor %}
+			{{ form.description.label }}<br>
+			{{ form.description(cols=32, rows=3) }}<br>
+			{{ form.amount.label }}<br>
+			{{ form.amount(size=10) }}<br>
+			{% for error in form.amount.errors %}
+                <span style="color: red;">{{ error }}</span>
+            {% endfor %}
+		</p>
+		<p>{{ form.submit() }} </p>
+		
+	</form>
+	<h3>Your Expenses: </h3>
+	<ul style="list-style: none">
+	{% for expense in current_user.expenses %}
+		<li>{% include 'expense.html' %}</li>
+	{% endfor %}
+	</ul>
+{% endblock %}
