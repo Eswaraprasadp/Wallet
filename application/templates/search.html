@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block app_content %}
+<h3>Split Bill: </h3>
+	<form action="" method="POST">
+		{{ search_form.hidden_tag() }}
+		<p>
+			{{search_form.search.label}} <br>
+			{{ search_form.search(size=40) }}<br>
+			{% for error in search_form.search.errors %}
+                <span style="color: red;">{{ error }}</span>
+            {% endfor %}
+		</p>
+		<p>{{ search_form.submit() }} </p>		
+	</form>
+		
+	{% block search_results %}{% endblock %}
+
+	<p><strong>Selected: </strong></p>
+	{% for user in selected %}
+		<p>{{ user.username }}</p>	
+	{% endfor %}
+
+	<form action="{{ url_for('check_selected', selected = selected) }}">
+		<input type="submit" name="submit" label = "Submit">
+	</form>
+
+	<p>{{ atleast_one_error }}</p>	
+
+{% endblock %}

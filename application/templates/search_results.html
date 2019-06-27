@@ -1,0 +1,10 @@
+{% extends 'search.html' %}
+{% block search_results %}
+<p>
+	<form action="" method="POST">
+		{{ select_form.hidden_tag() }}
+		{{ select_form.users }}
+		<p>{{ select_form.submit() }}</p>
+	</form>
+</p>
+{% endblock %}

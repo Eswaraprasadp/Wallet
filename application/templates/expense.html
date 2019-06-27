@@ -1,6 +1,11 @@
 <div>
 	<h4><div>{{expense.title}}</div></h4>
-	<div>{{expense.description}}</div>
+	<div>
+		{% if expense.description is not none %}
+			{{ expense.description }}
+		{% endif %}
+		
+	</div>
 	<div>Rs. {{expense.amount}}</div>
 	<div>
 		<a href="{{url_for('edit', timestamp = expense.timestamp)}}">Edit</a>&emsp;   
