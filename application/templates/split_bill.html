@@ -4,8 +4,9 @@
 		<h2>Select Amounts</h2>
 		<form action="" method="POST">
 			{{ form.hidden_tag() }}
-			{% for username in usernames %}
+			{% for username, error in usernames|zip(errors) %}
 				<p>{{ username }} : {{ form|attr(username) }}</p>
+				<p><span style="color: red"> {{ error }} </span></p>
 			{% endfor %}
 			{{ form.submit() }}
 		</form>

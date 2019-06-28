@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, IntegerField, FieldList, FormField
-from wtforms.ext.sqlalchemy.fields import QuerySelectMultipleField
+from wtforms.ext.sqlalchemy.fields import QuerySelectMultipleField, QuerySelectField
 from wtforms import widgets
 from wtforms.validators import DataRequired, ValidationError, Email, EqualTo, NumberRange, Length
 from application.models import User, Expenses, SelectedUser
@@ -32,9 +32,9 @@ class RegistrationForm(FlaskForm):
 
 class ExpensesForm(FlaskForm):
 	title = StringField('Title',validators=[DataRequired(), Length(min = 1, max = 50)])
-	description  = StringField('Description', validators=[DataRequired(), Length(min = 1, max = 140)])
+	description  = StringField('Description', validators=[Length(min = 0, max = 140)])
 	amount = IntegerField('Amount', validators=[DataRequired(), NumberRange(min = 0, max = 10000000)])	
-	submit = SubmitField('Add Expense')		
+	submit = SubmitField('Add to Wallet')		
 
 class SearchForm(FlaskForm):
 	search = StringField('Search User', validators = [DataRequired(), Length(min = 1, max = 50)])
@@ -44,7 +44,7 @@ def select_users_form_factory(keyword):
 
 	class SelectUsersForm(FlaskForm):
 		
-		users = QuerySelectMultipleField('User', query_factory = lambda: User.query.filter(User.username.ilike('%{0}%'.format(keyword))).all() , get_label =  lambda user:user.username, widget=widgets.ListWidget(prefix_label=False),
+		users = QuerySelectMultipleField('User', query_factory = lambda: User.query.filter(User.username.ilike('%{0}%'.format(keyword))).all() , get_label =  lambda user:user.username, widget=widgets.ListWidget(prefix_label = False),
 	        option_widget=widgets.CheckboxInput())
 		submit = SubmitField('Select')
 	

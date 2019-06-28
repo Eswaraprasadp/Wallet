@@ -1,12 +1,12 @@
 from flask import render_template, flash, redirect, url_for, request
 from application import app, db
-from application.forms import LoginForm, RegistrationForm, ExpensesForm, SearchForm, select_users_form_factory,  PaymentForm
+from application.forms import LoginForm, RegistrationForm, ExpensesForm, SearchForm, select_users_form_factory, PaymentForm
 from flask_login import current_user, login_user, logout_user, login_required
 from application.models import User, Expenses, SelectedUser
 from werkzeug.urls import url_parse
 from datetime import datetime
 from wtforms import IntegerField
-from wtforms.validators import DataRequired
+from wtforms.validators import DataRequired, NumberRange
 
 @app.route('/', methods = ['POST', 'GET'])
 @app.route('/index', methods = ['POST', 'GET'])
@@ -14,18 +14,20 @@ from wtforms.validators import DataRequired
 def index():
 	form = ExpensesForm()
 	if(form.validate_on_submit()):
-		expense = Expenses(title = form.title.data, description = form.description.data, amount = form.amount.data, user = current_user)
+		expense = Expenses(title = "Added in Wallet : " + form.title.data, description = form.description.data, amount = form.amount.data, user = current_user)
 		current_user.set_balance(form.amount.data + current_user.balance)
 		db.session.add(expense)
 		db.session.commit()
-		flash("Your Expense were added")
+		flash("Your Expense were added", "success")
 		return redirect(url_for('index'))
 
 	deleted = db.session.query(SelectedUser).delete()
 	db.session.commit()
 	current_user.set_balance(current_user.balance)
+	latest_expenses = current_user.expenses.order_by(Expenses.modified_time.desc()).all()
+	amount_expenses = current_user.expenses.order_by(Expenses.amount.desc()).all()
 
-	return render_template('index.html', title = 'Home', form = form)
+	return render_template('index.html', title = 'Home', form = form, latest_expenses = latest_expenses, amount_expenses = amount_expenses)
 
 @app.route('/split_bill/search', methods = ['GET', 'POST'])
 def search_users():
@@ -33,7 +35,6 @@ def search_users():
 	if(search_form.validate_on_submit()):
 		return redirect(url_for('select_users', query = search_form.search.data))		
 
-	print("SelectedUsers: ", SelectedUser.query.all())
 	return render_template('search.html', title = 'Search', search_form = search_form, selected = SelectedUser.query.all())
 
 @app.route('/split_bill/select/<query>', methods = ['GET', 'POST'])
@@ -44,16 +45,22 @@ def select_users(query):
 
 	if(select_users_form.validate_on_submit()):
 		selected_users = select_users_form.users.data
-		# print("Selected Users: ", selected_users)
-		print("Current User: ", current_user)
+	
 		if(current_user in selected_users):
 			flash("You Cannot choose your yourself!", 'error')
 			return render_template('search_results.html', title = 'Search', select_form = select_users_form, search_form = SearchForm(search = query), selected = SelectedUser.query.all())
 		
 		for user in selected_users:
-			u = SelectedUser(username = user.username)
-			db.session.add(u)
-			db.session.commit()
+			
+			existing_user = SelectedUser.query.filter_by(username = user.username).first()			
+			if (existing_user is not None):
+				flash("You have already selected user {}".format(user.username), 'error')
+				return render_template('search_results.html', title = 'Search', select_form = select_users_form, search_form = SearchForm(search = query), selected = SelectedUser.query.all())
+			
+			else:
+				u = SelectedUser(username = user.username)
+				db.session.add(u)
+				db.session.commit()
 
 		return redirect(url_for('search_users'))
 
@@ -63,7 +70,7 @@ def select_users(query):
 @login_required
 def check_selected(selected):
 	selected_users = SelectedUser.query.all()
-	if(len(selected_users) >= 0):
+	if(len(selected_users) > 0):
 		return redirect(url_for('split_bill', selected = selected_users))
 
 	flash("Select atleast one user!", "error")
@@ -74,23 +81,25 @@ def check_selected(selected):
 def split_bill(selected):
 	usernames = [user.username for user in SelectedUser.query.all()]
 	for username in usernames:
-		setattr(PaymentForm, username, IntegerField(1000, validators = [DataRequired()]))
+		setattr(PaymentForm, username, IntegerField(1000, validators = [DataRequired(), NumberRange(1, 1000000)]))
 
 	payment_form = PaymentForm()
+
 	if(payment_form.validate_on_submit()):	
 		amounts = [getattr(payment_form, username).data for username in usernames]
 		if(sum(amounts) >= current_user.balance):
-			flash("You do not have enough balance to pay!")
-			return render_template('split_bill.html', form = payment_form, usernames = usernames)
+			flash("You do not have enough balance to pay! Your balance is Rs. {}".format(current_user.balance))
+			return render_template('split_bill.html', title = "Payment", form = payment_form, usernames = usernames)
 
 		else:
-			description = "Payments: \n"
+			description = "Payments:"
 			for amount, username in zip(list(amounts), list(usernames)):
 				reciever = User.query.filter_by(username = username).first()
 				reciever.balance += amount
 				current_user.balance -= amount
-				description += username + ": Rs. %s" % amount
-				recieved = Expenses(user = reciever, amount = amount, title = "Payment recieved from " + current_user.username)
+				description += " " + username + ": Rs. %s" % amount
+				recieved = Expenses(user = reciever, amount = amount, title = "Payment recieved from " + current_user.username, recieved = True)
+				db.session.commit()
 
 			names = ', '.join(usernames)
 			if(len(usernames) > 1):
@@ -105,7 +114,10 @@ def split_bill(selected):
 			flash("Payment done", "success")
 			return redirect(url_for('index'))
 
-	return render_template('split_bill.html', form = payment_form, usernames = usernames)
+	# A one liner to get the first error for each username
+	errors = [("{}".format(getattr(payment_form, username).errors[0]) if len(getattr(payment_form, username).errors) > 0 else "") for username in usernames]
+
+	return render_template('split_bill.html', title = "Payment", form = payment_form, usernames = usernames, errors = errors)
 
 @app.route('/index/<timestamp>', methods = ['POST', 'GET'])
 @login_required
@@ -153,7 +165,6 @@ def login():
 			return redirect(url_for('login'))
 
 		login_user(user = user, remember = form.remember_me.data)
-		# flash('Login request: User: {}, Remember me: {}'.format(form.username.data, form.remember_me.data))
 		next_page = request.args.get('next')
 		if(not next_page or url_parse(next_page).netloc != ''):
 			next_page = url_for('index')

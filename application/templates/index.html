@@ -3,7 +3,7 @@
 {% block app_content %}
 	<h1>Welcome {{current_user.username}}!</h1>
 	<h3>Balance: Rs. {{current_user.balance}}</h3>
-	<h3>Add Expense: </h3>
+	<h3>Add to Your Wallet: </h3>
 	<form action="" method="POST">
 		{{ form.hidden_tag() }}
 		<p>
@@ -24,9 +24,24 @@
 		
 	</form>
 	<h3>Your Expenses: </h3>
-	<ul style="list-style: none">
-	{% for expense in current_user.expenses %}
-		<li>{% include 'expense.html' %}</li>
-	{% endfor %}
-	</ul>
+	<span>Sort By: </span>
+	{% block javascript %}
+		<script type="text/javascript">
+			{% include 'sort.js' %}
+		</script>
+	{% endblock %}
+	<select id="sort-expenses" onchange="sort()">
+		<option>Latest</option>
+		<option>Total Expense</option>
+	</select>
+		<ul style="list-style: none; display: block;" id="latest-expenses">
+		{% for expense in latest_expenses %}
+			<li>{% include 'expense.html' %}</li>
+		{% endfor %}
+		</ul>
+		<ul style="list-style: none; display: none;" id="amount-expenses">
+		{% for expense in amount_expenses %}
+			<li>{% include 'expense.html' %}</li>
+		{% endfor %}
+		</ul>	
 {% endblock %}

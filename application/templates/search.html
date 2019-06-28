@@ -17,10 +17,15 @@
 	{% block search_results %}{% endblock %}
 
 	<p><strong>Selected: </strong></p>
-	{% for user in selected %}
-		<p>{{ user.username }}</p>	
-	{% endfor %}
+	{% if selected | length > 0 %}
+		{% for user in selected %}
+			<p>{{ user.username }}</p>	
+		{% endfor %}
 
+	{% else %}
+		<p>None Selected</p>
+
+	{% endif %}
 	<form action="{{ url_for('check_selected', selected = selected) }}">
 		<input type="submit" name="submit" label = "Submit">
 	</form>
