@@ -3,6 +3,7 @@
 Add expenses, and modify them
 ## Installation and Usage
 Open Command Prompt and Change the directory to the cloned repository.
+Create a virtual environment (venv) in Python. Then, 
 For Windows, run the following commands
 ```
 $ venv\Scripts\activate
